@@ -18,10 +18,10 @@
       --border: rgba(167, 190, 218, .11);
       --text: #edf3fa;
       --muted: #8d9bb0;
-      --accent: #ff4000;
-      --accent-bright: #ff4000;
+      --accent: #ff4400;
+      --accent-bright: #e8754c;
       --green: #10b981;
-      --red: #ef6464;
+      --red: #ff0033;
       --cyan: #00d4ff;
       --radius: 18px;
       font-family: "DM Sans", "Cairo", sans-serif;
@@ -115,11 +115,10 @@
     .angle-badge { min-width: 57px; padding: 6px 8px; border: 1px solid rgba(245,166,35,.16); border-radius: 9px; color: var(--accent-bright); background: rgba(245,166,35,.07); text-align: center; font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
     .direction-hint { display: flex; justify-content: space-between; gap: 8px; margin: 17px 1px 5px; color: #74839a; font-size: 10px; }
     input[type="range"] { display: block; width: 100%; height: 22px; margin: 0; appearance: none; -webkit-appearance: none; background: transparent; cursor: pointer; touch-action: pan-y; }
-    input[type="range"]::-webkit-slider-runnable-track { height: 5px; border-radius: 99px; background: linear-gradient(to right, var(--accent) 0%, var(--accent) var(--progress,50%), #344257 var(--progress,50%), #344257 100%); }
-    input[type="range"]::-moz-range-track { height: 5px; border-radius: 99px; background: #344257; }
-    input[type="range"]::-moz-range-progress { height: 5px; border-radius: 99px; background: var(--accent); }
-    input[type="range"]::-webkit-slider-thumb { width: 17px; height: 17px; margin-top: -6px; appearance: none; -webkit-appearance: none; border: 3px solid #1b293e; border-radius: 50%; background: var(--accent-bright); box-shadow: 0 0 0 2px rgba(245,166,35,.3), 0 2px 8px rgba(0,0,0,.3); transition: transform .15s ease, box-shadow .15s ease; }
-    input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.12); box-shadow: 0 0 0 4px rgba(245,166,35,.15), 0 2px 8px rgba(0,0,0,.3); }
+    input[type="range"]::-webkit-slider-runnable-track { height: 5px; border-radius: 99px; background: linear-gradient(to right, var(--accent) 0%, var(--accent) var(--progress, 50%), #344257 var(--progress, 50%), #344257 100%); }
+    input[type="range"]::-moz-range-track { height: 5px; border-radius: 99px; background: linear-gradient(to right, var(--accent) 0%, var(--accent) var(--progress, 50%), #344257 var(--progress, 50%), #344257 100%); }
+    input[type="range"]::-webkit-slider-thumb { width: 17px; height: 17px; margin-top: -6px; appearance: none; -webkit-appearance: none; border: 3px solid #1b293e; border-radius: 50%; background: var(--accent-bright); box-shadow: 0 0 0 2px rgba(14, 195, 195, 0.3), 0 2px 8px rgba(251, 8, 8, 0.3); transition: transform .15s ease, box-shadow .15s ease; }
+    input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.12); box-shadow: 0 0 0 4px rgba(9, 230, 250, 0.49), 0 2px 8px rgba(0,0,0,.3); }
     input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border: 3px solid #1b293e; border-radius: 50%; background: var(--accent-bright); box-shadow: 0 0 0 2px rgba(245,166,35,.3); }
     .range-limits { display: flex; justify-content: space-between; margin-top: 3px; color: #637189; font-size: 9px; font-variant-numeric: tabular-nums; }
     .lower-grid { display: grid; grid-template-columns: minmax(0,1.1fr) minmax(260px,.9fr); gap: 14px; margin-top: 25px; }
@@ -344,15 +343,15 @@
         </div>
       </header>
       <div class="team-list">
-        <article class="team-member"><span class="team-member-number">01</span><div class="team-member-info"><div class="team-member-name">Mohamed Amr Mohamed</div><div class="team-member-id">ID: 8251361</div></div></article>
+        <article class="team-member"><span class="team-member-number">01</span><div class="team-member-info"><div class="team-member-name">Mohamed Amr Eldsoky</div><div class="team-member-id">ID: 8251361</div></div></article>
         <article class="team-member"><span class="team-member-number">02</span><div class="team-member-info"><div class="team-member-name">Abdallah Hasanein El-Baily</div><div class="team-member-id">ID: 82511144</div></div></article>
-        <article class="team-member"><span class="team-member-number">03</span><div class="team-member-info"><div class="team-member-name">Youssef Bahaa El-Din</div><div class="team-member-id">ID: 8251645</div></div></article>
-        <article class="team-member"><span class="team-member-number">04</span><div class="team-member-info"><div class="team-member-name">Ahmed Sherif El-Rasoul</div><div class="team-member-id">ID: 8251251</div></div></article>
+        <article class="team-member"><span class="team-member-number">03</span><div class="team-member-info"><div class="team-member-name">Yassin Bahaa El-Din</div><div class="team-member-id">ID: 8251645</div></div></article>
+        <article class="team-member"><span class="team-member-number">04</span><div class="team-member-info"><div class="team-member-name">Youssef Mostafa Sharaf</div><div class="team-member-id">ID: 8251852</div></div></article>
         <article class="team-member"><span class="team-member-number">05</span><div class="team-member-info"><div class="team-member-name">Mariam Bushra</div><div class="team-member-id">ID: 8251431</div></div></article>
         <article class="team-member"><span class="team-member-number">06</span><div class="team-member-info"><div class="team-member-name">Roqaya Mohamed El-Showaikhy</div><div class="team-member-id">ID: 8251114</div></div></article>
         <article class="team-member"><span class="team-member-number">07</span><div class="team-member-info"><div class="team-member-name">Aisha El-Meligy Ghanem</div><div class="team-member-id">ID: 8251055</div></div></article>
         <article class="team-member"><span class="team-member-number">08</span><div class="team-member-info"><div class="team-member-name">Rawda Mohamed</div><div class="team-member-id">ID: 8251511</div></div></article>
-        <article class="team-member"><span class="team-member-number">09</span><div class="team-member-info"><div class="team-member-name">Youssef Mostafa Sharaf</div><div class="team-member-id">ID: 8251852</div></div></article>
+        <article class="team-member"><span class="team-member-number">09</span><div class="team-member-info"><div class="team-member-name">Ahmed Sherif El-Rasoul</div><div class="team-member-id">ID: 8251251</div></div></article>
       </div>
     </section>
   </div>
@@ -447,7 +446,13 @@
           });
         });
       }
-      function updateSliderProgress(slider) { slider.style.setProperty("--progress", `${Number(slider.value) / 180 * 100}%`); }
+      function updateSliderProgress(slider) {
+        const min = Number(slider.min);
+        const max = Number(slider.max);
+        const range = max - min;
+        const progress = range === 0 ? 0 : Math.max(0, Math.min(100, (Number(slider.value) - min) / range * 100));
+        slider.style.setProperty("--progress", `${progress}%`);
+      }
       function setAngles(angles) {
         state.angles = angles.map((angle) => Math.max(0, Math.min(180, Math.round(Number(angle)))));
         state.angles.forEach((angle, index) => {
