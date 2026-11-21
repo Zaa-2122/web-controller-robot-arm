@@ -1,0 +1,695 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0d1421">
+  <title>RoboArm Controller</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: dark;
+      --page: #0d1421;
+      --surface: #141e2e;
+      --surface-raised: #19263a;
+      --surface-soft: #1d2b40;
+      --border: rgba(167, 190, 218, .11);
+      --text: #edf3fa;
+      --muted: #8d9bb0;
+      --accent: #ff4000;
+      --accent-bright: #ff4000;
+      --green: #10b981;
+      --red: #ef6464;
+      --cyan: #00d4ff;
+      --radius: 18px;
+      font-family: "DM Sans", "Cairo", sans-serif;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+    * { box-sizing: border-box; }
+    body {
+      min-width: 0;
+      min-height: 100vh;
+      margin: 0;
+      color: var(--text);
+      background: radial-gradient(ellipse at 86% 0%, rgba(245,166,35,.075), transparent 34rem), radial-gradient(ellipse at 0% 50%, rgba(0,212,255,.035), transparent 35rem), var(--page);
+    }
+    body.modal-open { overflow: hidden; }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+    .app-shell { width: min(1120px, calc(100% - 40px)); margin: 0 auto; padding-bottom: 48px; }
+    .topbar {
+      position: sticky; z-index: 5; top: 0; display: flex; align-items: center; justify-content: space-between;
+      gap: 18px; min-height: 82px; border-bottom: 1px solid var(--border);
+      background: rgba(13,20,33,.84); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+    }
+    .brand { display: flex; align-items: center; gap: 13px; min-width: 0; }
+    .brand-mark { display: grid; width: 43px; height: 43px; flex: 0 0 auto; place-items: center; border: 1px solid rgba(245,166,35,.27); border-radius: 14px; color: var(--accent); background: linear-gradient(145deg, rgba(245,166,35,.15), rgba(245,166,35,.035)); }
+    .brand-mark svg { width: 25px; height: 25px; }
+    .brand-title { margin: 0; font-size: 17px; font-weight: 800; letter-spacing: -.4px; white-space: nowrap; }
+    .brand-caption { margin: 3px 0 0; color: var(--muted); font-size: 11px; letter-spacing: .9px; text-transform: uppercase; }
+    .nav-actions { display: flex; align-items: center; gap: 10px; }
+    .icon-button, .language-button, .connect-button {
+      display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 42px;
+      border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,.035);
+      cursor: pointer; transition: background .18s ease, border-color .18s ease, transform .18s ease;
+    }
+    .icon-button:hover, .language-button:hover { border-color: rgba(245,166,35,.4); background: rgba(245,166,35,.08); }
+    .icon-button:active, .language-button:active, .connect-button:active { transform: scale(.97); }
+    .language-button { min-width: 80px; padding: 0 12px; color: #dce5ef; font-size: 12px; font-weight: 700; }
+    .language-button .lang-divider { color: #506078; }
+    .language-button .current-lang { color: var(--accent-bright); }
+    .team-button { min-height: 42px; padding: 0 13px; border: 1px solid rgba(245,166,35,.25); border-radius: 12px; color: var(--accent-bright); background: rgba(245,166,35,.07); cursor: pointer; font-size: 12px; font-weight: 700; transition: background .18s ease, border-color .18s ease, transform .18s ease; white-space: nowrap; }
+    .team-button:hover { border-color: rgba(245,166,35,.48); background: rgba(245,166,35,.13); }
+    .team-button:active { transform: scale(.97); }
+    .icon-button { width: 42px; padding: 0; color: #b6c3d3; font-size: 16px; font-weight: 700; }
+    .connect-button { min-width: 155px; padding: 0 15px; border-color: rgba(245,166,35,.36); color: var(--accent-bright); background: rgba(245,166,35,.09); font-size: 13px; font-weight: 700; }
+    .connect-button:hover { border-color: var(--accent); background: rgba(245,166,35,.15); }
+    .connect-button.connected { border-color: rgba(16,185,129,.35); color: #70e3ba; background: rgba(16,185,129,.10); }
+    .connect-button.connected:hover { background: rgba(16,185,129,.16); }
+    .disconnect-button { display: none; min-height: 38px; padding: 0 10px; border: 1px solid rgba(239,100,100,.2); border-radius: 10px; color: #f28a8a; background: rgba(239,100,100,.06); cursor: pointer; font-size: 11px; font-weight: 700; }
+    .disconnect-button.visible { display: inline-flex; align-items: center; justify-content: center; }
+    .disconnect-button:hover { border-color: rgba(239,100,100,.4); background: rgba(239,100,100,.12); }
+    .status-dot { width: 8px; height: 8px; flex: 0 0 auto; border-radius: 50%; background: var(--red); box-shadow: 0 0 12px rgba(239,100,100,.45); }
+    .connected .status-dot { background: var(--green); box-shadow: 0 0 0 0 rgba(16,185,129,.5); animation: pulse 1.8s infinite; }
+    @keyframes pulse { 70% { box-shadow: 0 0 0 7px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+    .page-intro { display: flex; align-items: end; justify-content: space-between; gap: 20px; padding: 39px 0 25px; }
+    .eyebrow { display: flex; align-items: center; gap: 8px; margin: 0 0 9px; color: var(--accent); font-size: 10px; font-weight: 800; letter-spacing: 1.8px; text-transform: uppercase; }
+    .eyebrow::before { width: 18px; height: 1px; background: var(--accent); content: ""; }
+    .page-title { margin: 0; font-size: clamp(24px, 4vw, 33px); font-weight: 800; letter-spacing: -1px; }
+    .page-subtitle { margin: 7px 0 0; color: var(--muted); font-size: 13px; }
+    .mode-pill { display: inline-flex; align-items: center; gap: 8px; padding: 9px 12px; border: 1px solid var(--border); border-radius: 999px; color: #afbdd0; background: rgba(255,255,255,.025); font-size: 11px; white-space: nowrap; }
+    .mode-pill::before { width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 10px rgba(0,212,255,.5); content: ""; }
+    .control-panel { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 19px; padding: 15px 18px; border: 1px solid var(--border); border-radius: 15px; background: linear-gradient(110deg, rgba(25,38,58,.92), rgba(20,30,46,.86)); box-shadow: 0 10px 32px rgba(0,0,0,.12); }
+    .demo-info { display: flex; align-items: center; gap: 12px; }
+    .demo-icon { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 11px; color: var(--cyan); background: rgba(0,212,255,.09); }
+    .demo-icon svg { width: 19px; height: 19px; }
+    .demo-title { margin: 0; font-size: 13px; font-weight: 700; }
+    .demo-hint { margin: 3px 0 0; color: var(--muted); font-size: 11px; }
+    .switch-wrap { display: flex; align-items: center; gap: 10px; }
+    .switch-label { color: #dce5ef; font-size: 12px; font-weight: 600; }
+    .switch { position: relative; display: inline-block; width: 42px; height: 24px; flex: 0 0 auto; }
+    .switch input { width: 0; height: 0; opacity: 0; }
+    .switch-track { position: absolute; inset: 0; border: 1px solid #3b4a60; border-radius: 99px; background: #263449; cursor: pointer; transition: .2s; }
+    .switch-track::before { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #9aa8bb; content: ""; transition: .2s; }
+    .switch input:checked + .switch-track { border-color: rgba(0,212,255,.55); background: rgba(0,212,255,.19); }
+    .switch input:checked + .switch-track::before { transform: translateX(18px); background: var(--cyan); }
+    [dir="rtl"] .switch-track::before { left: auto; right: 3px; }
+    [dir="rtl"] .switch input:checked + .switch-track::before { transform: translateX(-18px); }
+    .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 28px 0 13px; }
+    .section-title { margin: 0; color: #d8e2ee; font-size: 13px; font-weight: 700; }
+    .section-count { color: var(--muted); font-size: 11px; }
+    .joint-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .joint-card { position: relative; min-width: 0; padding: 18px 19px 16px; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius); background: linear-gradient(145deg, rgba(28,42,62,.94), rgba(20,30,46,.97)); box-shadow: 0 12px 30px rgba(0,0,0,.12); transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease; }
+    .joint-card:hover { transform: translateY(-2px); border-color: rgba(245,166,35,.2); box-shadow: 0 16px 36px rgba(0,0,0,.18); }
+    .joint-topline { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .joint-ident { display: flex; align-items: center; gap: 11px; min-width: 0; }
+    .joint-icon { display: grid; width: 39px; height: 39px; flex: 0 0 auto; place-items: center; border: 1px solid rgba(245,166,35,.17); border-radius: 12px; color: var(--accent); background: rgba(245,166,35,.075); }
+    .joint-icon svg { width: 21px; height: 21px; }
+    .joint-name { margin: 0; overflow: hidden; font-size: 14px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+    .joint-id { display: block; margin-top: 4px; color: #728198; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; letter-spacing: .3px; }
+    .angle-badge { min-width: 57px; padding: 6px 8px; border: 1px solid rgba(245,166,35,.16); border-radius: 9px; color: var(--accent-bright); background: rgba(245,166,35,.07); text-align: center; font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .direction-hint { display: flex; justify-content: space-between; gap: 8px; margin: 17px 1px 5px; color: #74839a; font-size: 10px; }
+    input[type="range"] { display: block; width: 100%; height: 22px; margin: 0; appearance: none; -webkit-appearance: none; background: transparent; cursor: pointer; touch-action: pan-y; }
+    input[type="range"]::-webkit-slider-runnable-track { height: 5px; border-radius: 99px; background: linear-gradient(to right, var(--accent) 0%, var(--accent) var(--progress,50%), #344257 var(--progress,50%), #344257 100%); }
+    input[type="range"]::-moz-range-track { height: 5px; border-radius: 99px; background: #344257; }
+    input[type="range"]::-moz-range-progress { height: 5px; border-radius: 99px; background: var(--accent); }
+    input[type="range"]::-webkit-slider-thumb { width: 17px; height: 17px; margin-top: -6px; appearance: none; -webkit-appearance: none; border: 3px solid #1b293e; border-radius: 50%; background: var(--accent-bright); box-shadow: 0 0 0 2px rgba(245,166,35,.3), 0 2px 8px rgba(0,0,0,.3); transition: transform .15s ease, box-shadow .15s ease; }
+    input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.12); box-shadow: 0 0 0 4px rgba(245,166,35,.15), 0 2px 8px rgba(0,0,0,.3); }
+    input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border: 3px solid #1b293e; border-radius: 50%; background: var(--accent-bright); box-shadow: 0 0 0 2px rgba(245,166,35,.3); }
+    .range-limits { display: flex; justify-content: space-between; margin-top: 3px; color: #637189; font-size: 9px; font-variant-numeric: tabular-nums; }
+    .lower-grid { display: grid; grid-template-columns: minmax(0,1.1fr) minmax(260px,.9fr); gap: 14px; margin-top: 25px; }
+    .surface-card { min-width: 0; padding: 17px 18px; border: 1px solid var(--border); border-radius: var(--radius); background: rgba(20,30,46,.83); box-shadow: 0 12px 30px rgba(0,0,0,.1); }
+    .card-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .card-heading h2 { margin: 0; font-size: 13px; font-weight: 700; }
+    .small-muted { color: var(--muted); font-size: 10px; }
+    .save-row { display: flex; gap: 9px; }
+    .pose-name-input, .delay-input { min-width: 0; height: 39px; padding: 0 12px; border: 1px solid var(--border); border-radius: 10px; color: var(--text); background: rgba(9,15,25,.35); font-size: 12px; }
+    .pose-name-input { flex: 1; }
+    .pose-name-input::placeholder { color: #77869b; }
+    .action-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 39px; padding: 0 12px; border: 1px solid transparent; border-radius: 10px; cursor: pointer; font-size: 11px; font-weight: 700; transition: .18s ease; white-space: nowrap; }
+    .action-button:hover { transform: translateY(-1px); }
+    .action-button:active { transform: scale(.97); }
+    .action-button.primary { color: #241707; background: var(--accent); box-shadow: 0 5px 14px rgba(245,166,35,.16); }
+    .action-button.primary:hover { background: var(--accent-bright); }
+    .action-button.secondary { border-color: var(--border); color: #d4dfeb; background: rgba(255,255,255,.035); }
+    .action-button.secondary:hover { border-color: rgba(245,166,35,.32); background: rgba(245,166,35,.07); }
+    .action-button.danger { width: 30px; min-height: 30px; padding: 0; border-color: rgba(239,100,100,.16); color: #ff8c8c; background: rgba(239,100,100,.06); font-size: 16px; }
+    .pose-list { display: grid; gap: 7px; max-height: 190px; overflow: auto; }
+    .pose-empty { margin: 2px 0; padding: 12px; border: 1px dashed rgba(167,190,218,.14); border-radius: 10px; color: var(--muted); text-align: center; font-size: 11px; }
+    .pose-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 9px 8px 11px; border: 1px solid rgba(167,190,218,.08); border-radius: 11px; background: rgba(255,255,255,.025); }
+    .pose-main { display: flex; align-items: center; gap: 9px; min-width: 0; }
+    .pose-index { display: grid; width: 26px; height: 26px; flex: 0 0 auto; place-items: center; border-radius: 8px; color: var(--accent); background: rgba(245,166,35,.08); font-size: 10px; font-weight: 800; }
+    .pose-copy { min-width: 0; }
+    .pose-title { overflow: hidden; color: #e3ebf4; font-size: 11px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+    .pose-values { margin-top: 3px; overflow: hidden; color: #77869b; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+    .pose-buttons { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+    .pose-load { min-height: 30px; padding: 0 9px; font-size: 10px; }
+    .sequence-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 13px; padding-top: 12px; border-top: 1px solid var(--border); }
+    .delay-setting { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 10px; }
+    .delay-input { width: 70px; height: 32px; padding: 0 8px; text-align: center; }
+    .loop-control { display: flex; align-items: center; gap: 7px; color: #c1ccda; font-size: 10px; cursor: pointer; }
+    .loop-control input { accent-color: var(--accent); }
+    .sequence-actions { display: flex; gap: 7px; }
+    .monitor-card { padding-bottom: 12px; }
+    .monitor-toggle { display: flex; align-items: center; gap: 7px; padding: 0; border: 0; color: #dfe7ef; background: transparent; cursor: pointer; font-size: 13px; font-weight: 700; }
+    .chevron { color: var(--muted); transition: transform .2s ease; }
+    .monitor-card[aria-expanded="true"] .chevron { transform: rotate(180deg); }
+    .log-badge { padding: 4px 7px; border-radius: 7px; color: #92a2b9; background: rgba(255,255,255,.05); font-size: 9px; }
+    .log-content { display: none; }
+    .monitor-card[aria-expanded="true"] .log-content { display: block; }
+    .log-list { display: grid; gap: 4px; max-height: 145px; overflow: auto; padding: 10px; border: 1px solid rgba(167,190,218,.08); border-radius: 10px; background: #0d1522; }
+    .log-entry { display: flex; justify-content: space-between; gap: 8px; color: #93a2b6; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; }
+    .log-entry code { color: #84d9bc; font: inherit; }
+    .log-empty { margin: 0; color: #74839a; font-size: 10px; }
+    .footer-note { margin: 20px 0 0; color: #68778c; text-align: center; font-size: 10px; line-height: 1.7; }
+    .compat-note { display: none; margin-top: 15px; padding: 11px 13px; border: 1px solid rgba(245,166,35,.19); border-radius: 11px; color: #d5bd94; background: rgba(245,166,35,.055); font-size: 11px; line-height: 1.6; }
+    .compat-note.visible { display: block; }
+    .toast-region { position: fixed; z-index: 20; top: 96px; right: max(20px, calc((100vw - 1120px)/2)); display: grid; gap: 8px; pointer-events: none; }
+    [dir="rtl"] .toast-region { right: auto; left: max(20px, calc((100vw - 1120px)/2)); }
+    .toast { max-width: min(380px, calc(100vw - 36px)); padding: 12px 15px; border: 1px solid rgba(167,190,218,.15); border-radius: 12px; color: #eaf1f8; background: rgba(25,38,58,.96); box-shadow: 0 12px 30px rgba(0,0,0,.3); font-size: 12px; animation: toast-in .22s ease both; }
+    .toast.success { border-color: rgba(16,185,129,.28); }
+    .toast.warning { border-color: rgba(245,166,35,.3); }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+    .modal-backdrop { position: fixed; z-index: 30; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(4,8,14,.72); backdrop-filter: blur(9px); -webkit-backdrop-filter: blur(9px); animation: fade-in .18s ease both; }
+    .modal-backdrop[hidden] { display: none; }
+    .help-modal { display: flex; width: min(610px, 100%); max-height: min(780px, calc(100vh - 40px)); flex-direction: column; overflow: hidden; border: 1px solid rgba(167,190,218,.16); border-radius: 20px; background: linear-gradient(145deg, rgba(28,42,62,.98), rgba(16,25,39,.99)); box-shadow: 0 24px 80px rgba(0,0,0,.45); animation: modal-in .22s ease both; }
+    .team-modal { width: min(520px, 100%); }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 19px 21px; border-bottom: 1px solid var(--border); }
+    .modal-heading { display: flex; align-items: center; gap: 11px; }
+    .help-mark { display: grid; width: 37px; height: 37px; place-items: center; border-radius: 11px; color: var(--accent); background: rgba(245,166,35,.1); font-size: 16px; font-weight: 800; }
+    .modal-header h2 { margin: 0; font-size: 16px; font-weight: 800; }
+    .modal-header p { margin: 4px 0 0; color: var(--muted); font-size: 10px; }
+    .modal-close { width: 34px; min-height: 34px; border-radius: 10px; font-size: 18px; }
+    .modal-body { display: grid; gap: 17px; overflow: auto; padding: 19px 21px; }
+    .guide-section { padding: 14px 15px; border: 1px solid rgba(167,190,218,.09); border-radius: 13px; background: rgba(255,255,255,.025); }
+    .guide-section h3 { display: flex; align-items: center; gap: 9px; margin: 0 0 9px; color: #f1f5fa; font-size: 12px; }
+    .guide-section h3 span { color: var(--accent); font-size: 14px; }
+    .guide-section p, .guide-section li { color: #a6b3c5; font-size: 11px; line-height: 1.75; }
+    .guide-section p { margin: 0; }
+    .guide-section ol { display: grid; gap: 5px; margin: 0; padding-inline-start: 20px; }
+    .team-list { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 9px; overflow: auto; padding: 18px 21px; }
+    .team-member { display: flex; min-width: 0; align-items: center; gap: 10px; padding: 11px; border: 1px solid rgba(167,190,218,.09); border-radius: 13px; background: rgba(255,255,255,.025); }
+    .team-member-number { display: grid; width: 29px; height: 29px; flex: 0 0 auto; place-items: center; border-radius: 9px; color: var(--accent-bright); background: rgba(245,166,35,.09); font-size: 10px; font-weight: 800; }
+    .team-member-info { min-width: 0; }
+    .team-member-name { overflow-wrap: anywhere; color: #e7eef7; font-size: 11px; font-weight: 700; line-height: 1.5; }
+    .team-member-id { margin-top: 4px; color: #91a0b5; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; }
+    .modal-footer { display: flex; justify-content: flex-end; padding: 14px 21px 18px; border-top: 1px solid var(--border); }
+    @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes modal-in { from { opacity: 0; transform: translateY(9px) scale(.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    [dir="rtl"] { font-family: "Cairo", "DM Sans", sans-serif; }
+    [dir="rtl"] .page-title { letter-spacing: 0; }
+    [dir="rtl"] .eyebrow { letter-spacing: 0; }
+    [dir="rtl"] .pose-row { padding-right: 11px; padding-left: 9px; }
+    [dir="rtl"] .icon-button, [dir="rtl"] .action-button { letter-spacing: 0; }
+    @media (max-width: 680px) {
+      .app-shell { width: min(100% - 28px, 520px); padding-bottom: 34px; }
+      .topbar { min-height: 72px; gap: 8px; }
+      .brand { gap: 9px; }
+      .brand-mark { width: 38px; height: 38px; border-radius: 12px; }
+      .brand-title { font-size: 14px; }
+      .brand-caption { font-size: 9px; }
+      .nav-actions { gap: 6px; }
+      .team-button { min-height: 39px; padding: 0 9px; font-size: 10px; }
+      .connect-button { min-width: 0; min-height: 39px; gap: 7px; padding: 0 10px; font-size: 11px; }
+      .disconnect-button { min-height: 35px; padding: 0 7px; font-size: 10px; }
+      .icon-button { width: 38px; min-height: 39px; }
+      .language-button { min-width: 65px; min-height: 39px; padding: 0 8px; font-size: 10px; }
+      .page-intro { align-items: flex-start; padding: 28px 0 19px; }
+      .page-subtitle { max-width: 260px; line-height: 1.55; }
+      .mode-pill { margin-top: 23px; padding: 7px 9px; font-size: 9px; }
+      .control-panel { padding: 12px; }
+      .demo-info { gap: 9px; }
+      .demo-icon { width: 32px; height: 32px; }
+      .demo-title { font-size: 11px; }
+      .demo-hint { font-size: 9px; }
+      .switch-label { font-size: 10px; }
+      .joint-grid { grid-template-columns: 1fr; gap: 10px; }
+      .joint-card { padding: 16px; }
+      .lower-grid { grid-template-columns: 1fr; gap: 11px; margin-top: 20px; }
+      .surface-card { padding: 15px; }
+      .toast-region { top: 82px; right: 14px; }
+      [dir="rtl"] .toast-region { right: auto; left: 14px; }
+    }
+    @media (max-width: 390px) {
+      .app-shell { width: calc(100% - 20px); }
+      .brand-caption { display: none; }
+      .brand-title { font-size: 12px; }
+      .brand-mark { width: 34px; height: 34px; }
+      .language-button { min-width: 57px; padding: 0 5px; }
+      .connect-button { padding: 0 7px; font-size: 10px; }
+      .disconnect-button { font-size: 9px; }
+      .control-panel { gap: 8px; }
+      .demo-hint { max-width: 135px; }
+      .sequence-controls { flex-wrap: wrap; }
+    }
+    @media (max-width: 360px) {
+      .topbar { flex-wrap: wrap; padding-top: 9px; }
+      .brand { flex: 1 1 100%; }
+      .nav-actions { width: 100%; justify-content: flex-end; padding-bottom: 9px; }
+      .nav-actions { flex-wrap: wrap; }
+      .modal-header { padding: 14px; }
+      .modal-heading { gap: 7px; }
+      .modal-heading h2 { font-size: 13px; }
+      .modal-header p { display: none; }
+      .modal-header .language-button { min-width: 54px; }
+    }
+    @media (max-width: 420px) {
+      .team-list { grid-template-columns: 1fr; gap: 7px; padding: 14px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20h10M9 20v-3.5l2.2-2.2m3.3 1.2-3.3-3.3 2-2 3.3 3.3m0 0 2.2-2.2a2 2 0 0 0 0-2.8l-1.1-1.1a2 2 0 0 0-2.8 0l-2.2 2.2m-1.4 1.4-2.1-2.1a2 2 0 0 0-2.8 0L5 10.1a2 2 0 0 0 0 2.8l3.3 3.3M12.4 7.4l1.8-1.8"/></svg></div>
+        <div><h1 class="brand-title" data-i18n="appTitle">RoboArm Controller</h1><p class="brand-caption" data-i18n="brandCaption">6-axis control system</p></div>
+      </div>
+      <nav class="nav-actions" aria-label="Main controls" data-i18n-aria="mainNav">
+        <button id="languageButton" class="language-button" type="button" aria-label="Switch language"><span class="lang-en current-lang">EN</span><span class="lang-divider">/</span><span class="lang-ar">عربي</span></button>
+        <button id="connectButton" class="connect-button" type="button"><span class="status-dot" aria-hidden="true"></span><span id="connectionLabel" data-i18n="connect">Connect Bluetooth</span></button>
+        <button id="disconnectButton" class="disconnect-button" type="button" data-i18n="disconnect" hidden>Disconnect</button>
+        <button id="teamButton" class="team-button" type="button" data-i18n="teamMembers" aria-label="Team Members">Team Members</button>
+        <button id="helpButton" class="icon-button" type="button" aria-label="Help" title="Help">?</button>
+      </nav>
+    </header>
+    <main>
+      <section class="page-intro" aria-labelledby="pageTitle">
+        <div><p class="eyebrow" data-i18n="eyebrow">Precision control</p><h2 class="page-title" id="pageTitle" data-i18n="dashboard">Arm dashboard</h2><p class="page-subtitle" data-i18n="subtitle">Adjust each joint and watch your robotic arm move.</p></div>
+        <span class="mode-pill" data-i18n="sixAxis">6-DOF · 6 joints</span>
+      </section>
+      <section class="control-panel" aria-label="Demo mode" data-i18n-aria="demoTitle">
+        <div class="demo-info"><div class="demo-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z"/></svg></div><div><p class="demo-title" data-i18n="demoTitle">Demo / Simulation Mode</p><p class="demo-hint" data-i18n="demoHint">Explore the controls without hardware.</p></div></div>
+        <div class="switch-wrap"><span class="switch-label" id="demoStateLabel">ON</span><label class="switch"><input id="demoSwitch" type="checkbox" checked aria-label="Toggle demo mode" data-i18n-aria="demoToggle"><span class="switch-track"></span></label></div>
+      </section>
+      <div class="section-heading"><h2 class="section-title" data-i18n="jointSection">Joint controls</h2><span class="section-count" data-i18n="angleRange">Range · 0° — 180°</span></div>
+      <section id="jointGrid" class="joint-grid" aria-label="Joint controls" data-i18n-aria="jointSection"></section>
+      <div class="lower-grid">
+        <section class="surface-card" aria-labelledby="posesTitle">
+          <div class="card-heading"><h2 id="posesTitle" data-i18n="poses">Saved poses</h2><span id="poseCount" class="small-muted">0</span></div>
+          <div class="save-row"><input id="poseNameInput" class="pose-name-input" type="text" maxlength="32" data-i18n-placeholder="posePlaceholder" placeholder="Pose name (optional)"><button id="savePoseButton" class="action-button primary" type="button"><span aria-hidden="true">＋</span><span data-i18n="savePose">Save pose</span></button></div>
+          <div id="poseList" class="pose-list" aria-live="polite" style="margin-top:11px"></div>
+          <div class="sequence-controls">
+            <label class="delay-setting"><span data-i18n="stepDelay">Step delay</span><input id="delayInput" class="delay-input" type="number" min="100" max="60000" step="100" value="1000"><span data-i18n="milliseconds">ms</span></label>
+            <label class="loop-control"><input id="loopSwitch" type="checkbox"><span data-i18n="loop">Loop</span></label>
+            <div class="sequence-actions"><button id="runSequenceButton" class="action-button secondary" type="button"><span aria-hidden="true">▶</span><span data-i18n="runSequence">Run sequence</span></button><button id="resetButton" class="action-button secondary" type="button"><span aria-hidden="true">↺</span><span data-i18n="resetHome">Reset / Home</span></button></div>
+          </div>
+        </section>
+        <section id="monitorCard" class="surface-card monitor-card" aria-expanded="false">
+          <div class="card-heading" style="margin-bottom:0"><button id="monitorToggle" class="monitor-toggle" type="button" aria-expanded="false" aria-controls="logContent"><span class="chevron" aria-hidden="true">⌄</span><span data-i18n="serialMonitor">Serial monitor</span></button><span id="logCount" class="log-badge">0</span></div>
+          <div id="logContent" class="log-content" style="margin-top:12px"><div id="logList" class="log-list" aria-live="polite"><p class="log-empty" data-i18n="noCommands">Commands will appear here.</p></div></div>
+        </section>
+      </div>
+      <div id="compatNote" class="compat-note" role="status"></div>
+      <p class="footer-note" data-i18n="footerNote">Web Serial requires a secure context and a supported desktop browser. HC-05 / HC-06 must be paired and expose a serial port.</p>
+    </main>
+  </div>
+  <div id="toastRegion" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+  <div id="helpModal" class="modal-backdrop" hidden>
+    <section class="help-modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+      <header class="modal-header"><div class="modal-heading"><div class="help-mark" aria-hidden="true">?</div><div><h2 id="helpTitle" data-i18n="helpTitle">Help &amp; instructions</h2><p data-i18n="helpSubtitle">Everything you need to get moving.</p></div></div><div class="nav-actions"><button id="modalLanguageButton" class="language-button" type="button" data-i18n-aria="switchLanguage" aria-label="Switch language"><span class="lang-en current-lang">EN</span><span class="lang-divider">/</span><span class="lang-ar">عربي</span></button><button id="closeHelpButton" class="icon-button modal-close" type="button" data-i18n-aria="close" aria-label="Close">×</button></div></header>
+      <div class="modal-body">
+        <section class="guide-section"><h3><span aria-hidden="true">⌁</span><span data-i18n="howConnect">How to connect</span></h3><ol><li data-i18n="connectStep1">Pair your HC-05 or HC-06 in your device's Bluetooth settings (PIN 1234 or 0000).</li><li data-i18n="connectStep2">Open this app in Chrome or Edge over HTTPS or localhost.</li><li data-i18n="connectStep3">Click Connect Bluetooth and select the paired module's outgoing serial port.</li><li data-i18n="connectStep4">Look for the green Connected badge. The serial speed is 9600 baud.</li></ol></section>
+        <section class="guide-section"><h3><span aria-hidden="true">⌖</span><span data-i18n="controlsGuide">Controls guide</span></h3><p data-i18n="controlsText">Use the six sliders to control the base, shoulder, elbow, wrist roll, wrist pitch, and gripper. Reset / Home returns each joint to 90°. Save poses to build a sequence, then run it with your chosen delay and optional loop.</p></section>
+        <section class="guide-section"><h3><span aria-hidden="true">⚡</span><span data-i18n="safetyTips">Safety &amp; power tips</span></h3><p data-i18n="safetyText">Move sliders smoothly, one at a time. Rapid movement across all six servos can cause battery voltage drops. Avoid forcing or over-tightening the gripper.</p></section>
+      </div>
+      <footer class="modal-footer"><button id="backButton" class="action-button primary" type="button" data-i18n="backToControl">Back to control</button></footer>
+    </section>
+  </div>
+  <div id="teamModal" class="modal-backdrop" hidden>
+    <section class="help-modal team-modal" role="dialog" aria-modal="true" aria-labelledby="teamTitle">
+      <header class="modal-header">
+        <div class="modal-heading"><div class="help-mark" aria-hidden="true">✦</div><div><h2 id="teamTitle" data-i18n="teamTitle">Team Members</h2><p data-i18n="teamSubtitle">The people behind this project.</p></div></div>
+        <div class="nav-actions">
+          <button id="teamLanguageButton" class="language-button" type="button" data-i18n-aria="switchLanguage" aria-label="Switch language"><span class="lang-en current-lang">EN</span><span class="lang-divider">/</span><span class="lang-ar">عربي</span></button>
+          <button id="closeTeamButton" class="icon-button modal-close" type="button" data-i18n-aria="close" aria-label="Close">×</button>
+        </div>
+      </header>
+      <div class="team-list">
+        <article class="team-member"><span class="team-member-number">01</span><div class="team-member-info"><div class="team-member-name">Mohamed Amr Mohamed</div><div class="team-member-id">ID: 8251361</div></div></article>
+        <article class="team-member"><span class="team-member-number">02</span><div class="team-member-info"><div class="team-member-name">Abdallah Hasanein El-Baily</div><div class="team-member-id">ID: 82511144</div></div></article>
+        <article class="team-member"><span class="team-member-number">03</span><div class="team-member-info"><div class="team-member-name">Youssef Bahaa El-Din</div><div class="team-member-id">ID: 8251645</div></div></article>
+        <article class="team-member"><span class="team-member-number">04</span><div class="team-member-info"><div class="team-member-name">Ahmed Sherif El-Rasoul</div><div class="team-member-id">ID: 8251251</div></div></article>
+        <article class="team-member"><span class="team-member-number">05</span><div class="team-member-info"><div class="team-member-name">Mariam Bushra</div><div class="team-member-id">ID: 8251431</div></div></article>
+        <article class="team-member"><span class="team-member-number">06</span><div class="team-member-info"><div class="team-member-name">Roqaya Mohamed El-Showaikhy</div><div class="team-member-id">ID: 8251114</div></div></article>
+        <article class="team-member"><span class="team-member-number">07</span><div class="team-member-info"><div class="team-member-name">Aisha El-Meligy Ghanem</div><div class="team-member-id">ID: 8251055</div></div></article>
+        <article class="team-member"><span class="team-member-number">08</span><div class="team-member-info"><div class="team-member-name">Rawda Mohamed</div><div class="team-member-id">ID: 8251511</div></div></article>
+        <article class="team-member"><span class="team-member-number">09</span><div class="team-member-info"><div class="team-member-name">Youssef Mostafa Sharaf</div><div class="team-member-id">ID: 8251852</div></div></article>
+      </div>
+    </section>
+  </div>
+  <script>
+    (() => {
+      "use strict";
+      const translations = {
+        en: {
+            appTitle:"RoboArm Controller",brandCaption:"6-axis control system",mainNav:"Main controls",demoToggle:"Toggle demo mode",switchLanguage:"Switch language",teamMembers:"Team Members",teamTitle:"Team Members",teamSubtitle:"The people behind this project.",connect:"Connect Bluetooth",connected:"Connected",disconnect:"Disconnect",eyebrow:"Precision control",dashboard:"Arm dashboard",subtitle:"Adjust each joint and watch your robotic arm move.",sixAxis:"6-DOF · 6 joints",
+          demoTitle:"Demo / Simulation Mode",demoHint:"Explore the controls without hardware.",on:"ON",off:"OFF",jointSection:"Joint controls",angleRange:"Range · 0° — 180°",leftRight:"Left",right:"Right",up:"Up",down:"Down",extend:"Extend",retract:"Retract",rotate:"Rotate",tilt:"Tilt",open:"Open",close:"Close",
+          poses:"Saved poses",posePlaceholder:"Pose name (optional)",savePose:"Save pose",loadPose:"Load",noPoses:"No saved poses yet. Set your joints and save a pose.",stepDelay:"Step delay",milliseconds:"ms",loop:"Loop",runSequence:"Run sequence",stopSequence:"Stop sequence",resetHome:"Reset / Home",serialMonitor:"Serial monitor",noCommands:"Commands will appear here.",
+          footerNote:"Web Serial requires a secure context and a supported desktop browser. HC-05 / HC-06 must be paired and expose a serial port.",helpTitle:"Help & instructions",helpSubtitle:"Everything you need to get moving.",close:"Close",howConnect:"How to connect",
+          connectStep1:"Pair your HC-05 or HC-06 in your device's Bluetooth settings (PIN 1234 or 0000).",connectStep2:"Open this app in Chrome or Edge over HTTPS or localhost.",connectStep3:"Click Connect Bluetooth and select the paired module's outgoing serial port.",connectStep4:"Look for the green Connected badge. The serial speed is 9600 baud.",
+          controlsGuide:"Controls guide",controlsText:"Use the six sliders to control the base, shoulder, elbow, wrist roll, wrist pitch, and gripper. Reset / Home returns each joint to 90°. Save poses to build a sequence, then run it with your chosen delay and optional loop.",safetyTips:"Safety & power tips",safetyText:"Move sliders smoothly, one at a time. Rapid movement across all six servos can cause battery voltage drops. Avoid forcing or over-tightening the gripper.",backToControl:"Back to control",
+          unsupported:"Web Serial isn't available here. Open this app in Chrome or Edge on desktop over HTTPS or localhost. Demo mode is ready to use.",insecure:"Web Serial requires HTTPS or localhost. Try Chrome or Edge on a supported desktop browser.",pickerCancelled:"Bluetooth port selection was cancelled.",connectError:"Couldn't connect to the serial port. Check that the device is paired and not in use.",
+          disconnected:"Bluetooth device disconnected.",connectedToast:"Bluetooth serial connected at 9600 baud.",disconnectedToast:"Disconnected from the robot arm.",demoEnabled:"Demo mode enabled. Commands will be simulated.",demoDisabled:"Demo mode disabled. Connect Bluetooth to control hardware.",
+          poseSaved:"Pose saved.",poseLoaded:"Pose loaded.",poseDeleted:"Pose deleted.",poseNameDefault:"Pose",nothingToRun:"Save at least one pose before running a sequence.",sequenceStarted:"Sequence started.",sequenceStopped:"Sequence stopped.",homeDone:"Arm returned to home position.",writeError:"Couldn't send a command. Check the serial connection.",unsupportedSerialNotice:"Web Serial is not supported in this browser. Use Chrome or Edge on a desktop computer. Demo mode works without Bluetooth.",
+          channelBase:"Base",channelShoulder:"Shoulder",channelElbow:"Elbow",channelWristRoll:"Wrist roll",channelWristPitch:"Wrist pitch",channelGripper:"Gripper",hintBase:"Base · left / right rotation",hintShoulder:"Shoulder · up / down lift",hintElbow:"Elbow · extend / retract",hintWristRoll:"Wrist roll · rotate gripper",hintWristPitch:"Wrist pitch · tilt gripper",hintGripper:"Gripper · open / close claw"
+        },
+        ar: {
+          appTitle:"متحكم الذراع الروبوتية",brandCaption:"نظام تحكم بستة محاور",mainNav:"عناصر التحكم الرئيسية",demoToggle:"تبديل وضع المحاكاة",switchLanguage:"تغيير اللغة",teamMembers:"فريق العمل",teamTitle:"فريق العمل",teamSubtitle:"الأشخاص وراء هذا المشروع.",connect:"اتصال بالبلوتوث",connected:"متصل",disconnect:"قطع الاتصال",eyebrow:"تحكم دقيق",dashboard:"لوحة تحكم الذراع",subtitle:"اضبط كل مفصل وشاهد ذراعك الروبوتية تتحرك.",sixAxis:"٦ درجات حرية · ٦ مفاصل",
+          demoTitle:"وضع العرض / المحاكاة",demoHint:"استكشف أدوات التحكم دون أجهزة.",on:"مفعّل",off:"متوقف",jointSection:"التحكم بالمفاصل",angleRange:"النطاق · ٠° — ١٨٠°",leftRight:"يسار",right:"يمين",up:"أعلى",down:"أسفل",extend:"مدّ",retract:"ثني",rotate:"تدوير",tilt:"إمالة",open:"فتح",close:"قفل",
+          poses:"الوضعيات المحفوظة",posePlaceholder:"اسم الوضعية (اختياري)",savePose:"حفظ وضعية",loadPose:"تحميل",noPoses:"لا توجد وضعيات محفوظة. اضبط المفاصل ثم احفظ وضعية.",stepDelay:"تأخير الخطوة",milliseconds:"مللي ثانية",loop:"تكرار",runSequence:"تشغيل التسلسل",stopSequence:"إيقاف التسلسل",resetHome:"إعادة الضبط",serialMonitor:"مراقب الاتصال التسلسلي",noCommands:"ستظهر الأوامر هنا.",
+          footerNote:"يتطلب Web Serial اتصالاً آمناً ومتصفح كمبيوتر مدعوماً. يجب إقران HC-05 / HC-06 وإتاحته كمنفذ تسلسلي.",helpTitle:"المساعدة والتعليمات",helpSubtitle:"كل ما تحتاجه للبدء.",close:"إغلاق",howConnect:"خطوات الاتصال",
+          connectStep1:"أقرن HC-05 أو HC-06 من إعدادات البلوتوث في جهازك (رمز PIN هو 1234 أو 0000).",connectStep2:"افتح التطبيق في Chrome أو Edge عبر HTTPS أو localhost.",connectStep3:"اضغط اتصال بالبلوتوث واختر منفذ الاتصال التسلسلي الصادر للوحدة المقترنة.",connectStep4:"تحقق من ظهور حالة متصل باللون الأخضر. سرعة الاتصال التسلسلي 9600 باود.",
+          controlsGuide:"دليل التحكم",controlsText:"استخدم أشرطة التمرير الستة للتحكم في القاعدة والكتف والكوع ودوران المعصم وإمالته والكماشة. تعيد إعادة الضبط كل مفصل إلى ٩٠°. احفظ الوضعيات لإنشاء تسلسل، ثم شغّله بالتأخير الذي تختاره مع إمكانية التكرار.",safetyTips:"نصائح الأمان والطاقة",safetyText:"حرّك أشرطة التمرير بسلاسة، مفصلاً واحداً في كل مرة. قد تؤدي الحركة السريعة للمحركات الستة إلى انخفاض جهد البطارية. لا تجبر الكماشة على الإغلاق بإحكام زائد.",backToControl:"العودة للتحكم",
+          unsupported:"Web Serial غير متاح هنا. افتح التطبيق في Chrome أو Edge على الكمبيوتر عبر HTTPS أو localhost. يمكنك استخدام وضع العرض.",insecure:"يتطلب Web Serial اتصال HTTPS أو localhost. جرّب Chrome أو Edge على متصفح كمبيوتر مدعوم.",pickerCancelled:"تم إلغاء اختيار منفذ البلوتوث.",connectError:"تعذّر الاتصال بالمنفذ التسلسلي. تحقق من إقران الجهاز وعدم استخدامه من تطبيق آخر.",
+          disconnected:"انقطع اتصال جهاز البلوتوث.",connectedToast:"تم الاتصال بالمنفذ التسلسلي عبر البلوتوث بسرعة 9600 باود.",disconnectedToast:"تم قطع الاتصال بذراع الروبوت.",demoEnabled:"تم تفعيل وضع العرض. ستتم محاكاة الأوامر.",demoDisabled:"تم إيقاف وضع العرض. اتصل بالبلوتوث للتحكم بالجهاز.",
+          poseSaved:"تم حفظ الوضعية.",poseLoaded:"تم تحميل الوضعية.",poseDeleted:"تم حذف الوضعية.",poseNameDefault:"وضعية",nothingToRun:"احفظ وضعية واحدة على الأقل قبل تشغيل التسلسل.",sequenceStarted:"بدأ تشغيل التسلسل.",sequenceStopped:"تم إيقاف التسلسل.",homeDone:"عادت الذراع إلى وضعية البداية.",writeError:"تعذّر إرسال الأمر. تحقق من الاتصال التسلسلي.",unsupportedSerialNotice:"هذا المتصفح لا يدعم Web Serial. استخدم Chrome أو Edge على كمبيوتر. يعمل وضع العرض دون بلوتوث.",
+          channelBase:"القاعدة",channelShoulder:"الكتف",channelElbow:"الكوع",channelWristRoll:"دوران المعصم",channelWristPitch:"إمالة المعصم",channelGripper:"الكماشة",hintBase:"القاعدة · دوران يمين / يسار",hintShoulder:"الكتف · رفع أعلى / أسفل",hintElbow:"الكوع · مدّ / ثني",hintWristRoll:"دوران المعصم · لف الكماشة",hintWristPitch:"إمالة المعصم · إمالة الكماشة",hintGripper:"الكماشة · فتح / قفل"
+        }
+      };
+      const joints = [
+        {id:1,name:"channelBase",hint:"hintBase",left:"leftRight",right:"right",icon:"base"},
+        {id:2,name:"channelShoulder",hint:"hintShoulder",left:"down",right:"up",icon:"shoulder"},
+        {id:3,name:"channelElbow",hint:"hintElbow",left:"retract",right:"extend",icon:"elbow"},
+        {id:4,name:"channelWristRoll",hint:"hintWristRoll",left:"rotate",right:"rotate",icon:"roll"},
+        {id:5,name:"channelWristPitch",hint:"hintWristPitch",left:"tilt",right:"tilt",icon:"pitch"},
+        {id:6,name:"channelGripper",hint:"hintGripper",left:"open",right:"close",icon:"gripper"}
+      ];
+      const icons = {
+        base:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19h14M7 19v-3l5-3 5 3v3M12 13V8m0 0 3-3m-3 3-3-3"/><circle cx="12" cy="8" r="2"/></svg>',
+        shoulder:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19h14M8 19v-3a4 4 0 0 1 4-4h1l4-5m-4 5 3 3m-3-3V7"/><circle cx="13" cy="12" r="2"/></svg>',
+        elbow:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m5 17 5-5 4 4 5-7m0 0v4m0-4h-4"/><circle cx="10" cy="12" r="2"/></svg>',
+        roll:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12a7 7 0 1 0 2-5m-2 0v4h4"/><path d="M12 8v8m-3-4h6"/></svg>',
+        pitch:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 18h14M8 18l3-6 5-3m-5 3 4 3m-4-3 1-5"/><circle cx="11" cy="12" r="2"/></svg>',
+        gripper:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v6m0 0-4-3m4 3 4-3M8 8l-2 5m10-5 2 5M6 13l3 2m9-2-3 2M9 15v4m6-4v4"/><circle cx="12" cy="12" r="2"/></svg>'
+      };
+      const $ = (id) => document.getElementById(id);
+      const state = {lang:"en",angles:Array(6).fill(90),demo:true,port:null,reader:null,writer:null,intentionalDisconnect:false,writeQueue:Promise.resolve(),poses:[],running:false,runToken:0,sendTimers:new Map(),log:[]};
+      const encoder = new TextEncoder();
+      const poseStorageKey = "roboarm-controller-poses-v1";
+      const t = (key) => translations[state.lang][key] || translations.en[key] || key;
+
+      function renderStaticTranslations() {
+        document.documentElement.lang = state.lang;
+        document.documentElement.dir = state.lang === "ar" ? "rtl" : "ltr";
+        document.title = t("appTitle");
+        document.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t(el.dataset.i18n); });
+        document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => { el.placeholder = t(el.dataset.i18nPlaceholder); });
+        document.querySelectorAll("[data-i18n-aria]").forEach((el) => { el.setAttribute("aria-label", t(el.dataset.i18nAria)); });
+        $("languageButton").setAttribute("aria-label", state.lang === "en" ? "Switch to Arabic" : "Switch to English");
+        ["languageButton","modalLanguageButton","teamLanguageButton"].forEach((id) => {
+          $(id).querySelector(".lang-en").classList.toggle("current-lang", state.lang === "en");
+          $(id).querySelector(".lang-ar").classList.toggle("current-lang", state.lang === "ar");
+        });
+        $("modalLanguageButton").setAttribute("aria-label", t("switchLanguage"));
+        $("teamLanguageButton").setAttribute("aria-label", t("switchLanguage"));
+        $("teamButton").setAttribute("aria-label", t("teamMembers"));
+        $("demoStateLabel").textContent = state.demo ? t("on") : t("off");
+        $("helpButton").setAttribute("aria-label", t("helpTitle"));
+        $("helpButton").title = t("helpTitle");
+        renderConnection(); renderJoints(); renderPoses(); renderLog();
+        $("runSequenceButton").querySelector("span:last-child").textContent = state.running ? t("stopSequence") : t("runSequence");
+        $("compatNote").textContent = t("unsupportedSerialNotice");
+      }
+      function renderJoints() {
+        $("jointGrid").innerHTML = joints.map((joint) => {
+          const value = state.angles[joint.id - 1];
+          return `<article class="joint-card"><div class="joint-topline"><div class="joint-ident"><div class="joint-icon" aria-hidden="true">${icons[joint.icon]}</div><div><h3 class="joint-name">${t(joint.name)}</h3><span class="joint-id">S${joint.id} · ${t(joint.hint)}</span></div></div><output class="angle-badge" id="angle-${joint.id}" for="slider-${joint.id}">${value}°</output></div><div class="direction-hint"><span>${t(joint.left)}</span><span>${t(joint.right)}</span></div><input id="slider-${joint.id}" type="range" min="0" max="180" value="${value}" aria-label="${t(joint.name)}" aria-valuetext="${value}°"><div class="range-limits"><span>0°</span><span>180°</span></div></article>`;
+        }).join("");
+        joints.forEach((joint, index) => {
+          const slider = $(`slider-${joint.id}`);
+          updateSliderProgress(slider);
+          slider.addEventListener("input", () => {
+            const value = Number(slider.value);
+            state.angles[index] = value;
+            $(`angle-${joint.id}`).textContent = `${value}°`;
+            slider.setAttribute("aria-valuetext", `${value}°`);
+            updateSliderProgress(slider);
+            scheduleJointSend(joint.id, value);
+          });
+        });
+      }
+      function updateSliderProgress(slider) { slider.style.setProperty("--progress", `${Number(slider.value) / 180 * 100}%`); }
+      function setAngles(angles) {
+        state.angles = angles.map((angle) => Math.max(0, Math.min(180, Math.round(Number(angle)))));
+        state.angles.forEach((angle, index) => {
+          const slider = $(`slider-${index + 1}`);
+          slider.value = String(angle);
+          $(`angle-${index + 1}`).textContent = `${angle}°`;
+          slider.setAttribute("aria-valuetext", `${angle}°`);
+          updateSliderProgress(slider);
+        });
+      }
+      function renderConnection() {
+        const connected = Boolean(state.port);
+        $("connectButton").classList.toggle("connected", connected);
+        $("connectionLabel").textContent = connected ? t("connected") : t("connect");
+        $("connectButton").setAttribute("aria-label", connected ? `${t("connected")} — ${t("disconnect")}` : t("connect"));
+        $("connectButton").title = connected ? t("disconnect") : t("connect");
+        $("disconnectButton").hidden = !connected;
+        $("disconnectButton").classList.toggle("visible", connected);
+      }
+      function showToast(message, type) {
+        const toast = document.createElement("div");
+        toast.className = `toast ${type || ""}`;
+        toast.setAttribute("role", "status");
+        toast.textContent = message;
+        $("toastRegion").appendChild(toast);
+        window.setTimeout(() => toast.remove(), 3400);
+      }
+      function recordCommand(command) {
+        const stamp = new Date().toLocaleTimeString(state.lang === "ar" ? "ar" : "en", {hour:"2-digit",minute:"2-digit",second:"2-digit"});
+        state.log.unshift({command:command.trim(),stamp});
+        state.log = state.log.slice(0,25);
+        renderLog();
+      }
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, (char) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
+      }
+      function renderLog() {
+        $("logCount").textContent = String(state.log.length);
+        $("logList").innerHTML = state.log.length ? state.log.map((entry) => `<div class="log-entry"><code>${escapeHtml(entry.command)}</code><span>${escapeHtml(entry.stamp)}</span></div>`).join("") : `<p class="log-empty">${t("noCommands")}</p>`;
+      }
+      function sendCommand(command) {
+        recordCommand(command);
+        if (state.demo || !state.writer) return Promise.resolve();
+        const bytes = encoder.encode(`${command}\n`);
+        state.writeQueue = state.writeQueue.then(() => {
+          if (state.writer) return state.writer.write(bytes);
+        }).catch((error) => {
+          console.error("Web Serial write failed:", error);
+          showToast(t("writeError"), "warning");
+          void disconnectSerial(true);
+        });
+        return state.writeQueue;
+      }
+      function scheduleJointSend(id, value) {
+        const oldTimer = state.sendTimers.get(id);
+        if (oldTimer) window.clearTimeout(oldTimer);
+        state.sendTimers.set(id, window.setTimeout(() => {
+          state.sendTimers.delete(id);
+          void sendCommand(`S${id}:${value}`);
+        },45));
+      }
+      function flushPendingJointSends() {
+        state.sendTimers.forEach((timer) => window.clearTimeout(timer));
+        state.sendTimers.clear();
+      }
+      async function connectSerial() {
+        if (!("serial" in navigator)) {
+          $("compatNote").classList.add("visible");
+          showToast(t("unsupported"), "warning");
+          return;
+        }
+        if (!window.isSecureContext) { showToast(t("insecure"), "warning"); return; }
+        let port;
+        try {
+          port = await navigator.serial.requestPort();
+          await port.open({baudRate:9600});
+          state.port = port;
+          state.intentionalDisconnect = false;
+          state.writer = port.writable.getWriter();
+          state.reader = port.readable.getReader();
+          renderConnection();
+          $("compatNote").classList.remove("visible");
+          showToast(t("connectedToast"), "success");
+          void readSerialLoop(port, state.reader);
+        } catch (error) {
+          if (error && error.name === "NotFoundError") { showToast(t("pickerCancelled")); return; }
+          console.error("Web Serial connection failed:", error);
+          if (port) {
+            if (state.reader) { try { await state.reader.cancel(); state.reader.releaseLock(); } catch (cleanupError) { console.warn("Could not release serial reader:", cleanupError); } }
+            if (state.writer) { try { await state.writer.close(); state.writer.releaseLock(); } catch (cleanupError) { console.warn("Could not close serial writer:", cleanupError); } }
+            try { await port.close(); } catch (cleanupError) { console.warn("Could not close serial port:", cleanupError); }
+            state.port = null; state.reader = null; state.writer = null; renderConnection();
+          }
+          showToast(t("connectError"), "warning");
+        }
+      }
+      async function readSerialLoop(port, reader) {
+        try {
+          while (true) {
+            const {done} = await reader.read();
+            if (done) break;
+          }
+        } catch (error) {
+          if (!state.intentionalDisconnect) console.warn("Web Serial read ended:", error);
+        } finally {
+          try { reader.releaseLock(); } catch (error) { console.warn("Could not release serial reader:", error); }
+          if (state.reader === reader) state.reader = null;
+          if (state.port === port && !state.intentionalDisconnect) {
+            await disconnectSerial(true);
+            showToast(t("disconnected"), "warning");
+          }
+        }
+      }
+      async function disconnectSerial(silent) {
+        const port = state.port;
+        if (!port) return;
+        state.intentionalDisconnect = true;
+        state.port = null;
+        const reader = state.reader, writer = state.writer;
+        state.reader = null; state.writer = null;
+        renderConnection();
+        if (reader) { try { await reader.cancel(); } catch (error) { console.warn("Could not cancel serial reader:", error); } }
+        try { await state.writeQueue; } catch (error) { console.warn("Pending serial write failed:", error); }
+        if (writer) {
+          try { await writer.close(); } catch (error) { console.warn("Could not close serial writer:", error); }
+          try { writer.releaseLock(); } catch (error) { console.warn("Could not release serial writer:", error); }
+        }
+        try { await port.close(); } catch (error) { console.warn("Could not close serial port:", error); }
+        if (!silent) showToast(t("disconnectedToast"));
+      }
+      function readPoses() {
+        try {
+          const stored = JSON.parse(localStorage.getItem(poseStorageKey) || "[]");
+          if (Array.isArray(stored)) state.poses = stored.filter((pose) => pose && Array.isArray(pose.angles) && pose.angles.length === 6 && pose.angles.every((angle) => Number.isFinite(Number(angle)) && Number(angle) >= 0 && Number(angle) <= 180))
+            .map((pose) => ({id:String(pose.id),name:String(pose.name || ""),angles:pose.angles.map(Number)}));
+        } catch (error) { console.warn("Could not load saved poses:", error); state.poses = []; }
+      }
+      function persistPoses() {
+        try { localStorage.setItem(poseStorageKey, JSON.stringify(state.poses)); }
+        catch (error) { console.error("Could not save poses:", error); showToast(t("writeError"), "warning"); }
+      }
+      function renderPoses() {
+        $("poseCount").textContent = String(state.poses.length);
+        $("poseList").innerHTML = state.poses.length ? state.poses.map((pose,index) => `<div class="pose-row" data-pose-id="${escapeHtml(pose.id)}"><div class="pose-main"><span class="pose-index">${String(index+1).padStart(2,"0")}</span><div class="pose-copy"><div class="pose-title">${escapeHtml(pose.name || `${t("poseNameDefault")} ${index+1}`)}</div><div class="pose-values">${pose.angles.join(" · ")}</div></div></div><div class="pose-buttons"><button class="action-button secondary pose-load" type="button" data-action="load">${t("loadPose")}</button><button class="action-button danger" type="button" data-action="delete" aria-label="${t("poseDeleted")}" title="${t("poseDeleted")}">×</button></div></div>`).join("") : `<p class="pose-empty">${t("noPoses")}</p>`;
+      }
+      function wait(ms) { return new Promise((resolve) => window.setTimeout(resolve,ms)); }
+      async function applyPose(angles) {
+        flushPendingJointSends();
+        setAngles(angles);
+        for (let index=0; index<angles.length; index+=1) {
+          await sendCommand(`S${index+1}:${angles[index]}`);
+          if (index < angles.length-1) await wait(55);
+        }
+      }
+      async function resetHome() {
+        stopSequence(false);
+        await applyPose(Array(6).fill(90));
+        showToast(t("homeDone"),"success");
+      }
+      function stopSequence(showMessage) {
+        if (!state.running) return;
+        state.running = false; state.runToken += 1;
+        $("runSequenceButton").querySelector("span:last-child").textContent = t("runSequence");
+        if (showMessage) showToast(t("sequenceStopped"));
+      }
+      async function runSequence() {
+        if (state.running) { stopSequence(true); return; }
+        if (!state.poses.length) { showToast(t("nothingToRun"),"warning"); return; }
+        state.running = true;
+        const token = ++state.runToken;
+        $("runSequenceButton").querySelector("span:last-child").textContent = t("stopSequence");
+        showToast(t("sequenceStarted"),"success");
+        const delay = Math.max(100,Math.min(60000,Number($("delayInput").value)||1000));
+        $("delayInput").value = String(delay);
+        do {
+          for (const pose of [...state.poses]) {
+            if (!state.running || token !== state.runToken) return;
+            await applyPose(pose.angles);
+            await wait(delay);
+          }
+        } while (state.running && token === state.runToken && $("loopSwitch").checked);
+        if (state.running && token === state.runToken) {
+          state.running = false;
+          $("runSequenceButton").querySelector("span:last-child").textContent = t("runSequence");
+        }
+      }
+      function openHelp() {
+        $("helpModal").hidden = false; document.body.classList.add("modal-open"); $("closeHelpButton").focus();
+      }
+      function closeHelp() {
+        $("helpModal").hidden = true; document.body.classList.remove("modal-open"); $("helpButton").focus();
+      }
+      function openTeam() {
+        $("teamModal").hidden = false; document.body.classList.add("modal-open"); $("closeTeamButton").focus();
+      }
+      function closeTeam() {
+        $("teamModal").hidden = true; document.body.classList.remove("modal-open"); $("teamButton").focus();
+      }
+      function toggleLanguage() { state.lang = state.lang === "en" ? "ar" : "en"; renderStaticTranslations(); }
+      $("languageButton").addEventListener("click",toggleLanguage);
+      $("modalLanguageButton").addEventListener("click",toggleLanguage);
+      $("teamLanguageButton").addEventListener("click",toggleLanguage);
+      $("connectButton").addEventListener("click", () => { if (state.port) void disconnectSerial(false); else void connectSerial(); });
+      $("disconnectButton").addEventListener("click", () => { void disconnectSerial(false); });
+      $("demoSwitch").addEventListener("change", (event) => {
+        state.demo = event.target.checked;
+        $("demoStateLabel").textContent = state.demo ? t("on") : t("off");
+        showToast(state.demo ? t("demoEnabled") : t("demoDisabled"),state.demo ? "success" : "");
+      });
+      $("savePoseButton").addEventListener("click", () => {
+        const name = $("poseNameInput").value.trim();
+        state.poses.push({id:`${Date.now()}-${Math.random().toString(36).slice(2,8)}`,name,angles:[...state.angles]});
+        persistPoses(); renderPoses(); $("poseNameInput").value = ""; showToast(t("poseSaved"),"success");
+      });
+      $("poseList").addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-action]");
+        if (!button) return;
+        const row = button.closest("[data-pose-id]");
+        const index = state.poses.findIndex((pose) => pose.id === row.dataset.poseId);
+        if (index < 0) return;
+        if (button.dataset.action === "delete") {
+          stopSequence(false); state.poses.splice(index,1); persistPoses(); renderPoses(); showToast(t("poseDeleted"));
+        } else { void applyPose(state.poses[index].angles); showToast(t("poseLoaded"),"success"); }
+      });
+      $("resetButton").addEventListener("click", () => { void resetHome(); });
+      $("runSequenceButton").addEventListener("click", () => { void runSequence(); });
+      $("monitorToggle").addEventListener("click", () => {
+        const expanded = $("monitorCard").getAttribute("aria-expanded") !== "true";
+        $("monitorCard").setAttribute("aria-expanded",String(expanded));
+        $("monitorToggle").setAttribute("aria-expanded",String(expanded));
+      });
+      $("helpButton").addEventListener("click",openHelp);
+      $("teamButton").addEventListener("click",openTeam);
+      $("closeHelpButton").addEventListener("click",closeHelp);
+      $("closeTeamButton").addEventListener("click",closeTeam);
+      $("backButton").addEventListener("click",closeHelp);
+      $("helpModal").addEventListener("click",(event) => { if (event.target === $("helpModal")) closeHelp(); });
+      $("teamModal").addEventListener("click",(event) => { if (event.target === $("teamModal")) closeTeam(); });
+      document.addEventListener("keydown",(event) => {
+        if (event.key === "Escape") {
+          if (!$("teamModal").hidden) closeTeam();
+          else if (!$("helpModal").hidden) closeHelp();
+        }
+      });
+      if ("serial" in navigator) {
+        navigator.serial.addEventListener("disconnect",(event) => {
+          if (state.port && event.target === state.port) { void disconnectSerial(true); showToast(t("disconnected"),"warning"); }
+        });
+      } else $("compatNote").classList.add("visible");
+      readPoses();
+      renderStaticTranslations();
+    })();
+  </script>
+</body>
+</html>
